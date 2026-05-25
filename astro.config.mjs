@@ -50,7 +50,7 @@ export default defineConfig({
 			}
 		], rehypeSlug, addClassNames],
 		syntaxHighlight: 'shiki',
-		shikiConfig: { theme: 'github-light' },
+		shikiConfig: { theme: 'github-dark' },
 	},
 	vite: { resolve: { alias: { "@": path.resolve(__dirname, "./src") } } },
 	server: { host: '0.0.0.0' }

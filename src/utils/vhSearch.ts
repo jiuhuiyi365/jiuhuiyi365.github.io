@@ -5,10 +5,13 @@ import * as cheerio from 'cheerio';
 export default async (posts: any[]) => {
   const searchIndex = posts.map(i => {
     const $ = cheerio.load(`<body>${i.rendered.html}</body>`);
+    $('style').remove();
+    $('script').remove();
+    $('svg').remove();
     return {
       title: i.data.title,
       url: `/article/${i.data.id}`,
-      content: `${i.data.title} - ` + $('body').text().replace(/\n/g, '').replace(/<[^>]+>/g, '')
+      content: `${i.data.title} - ` + $('body').text().replace(/\n/g, '').replace(/<[^>]+>/g, '').replace(/\s{2,}/g, ' ').trim()
     };
   });
 
