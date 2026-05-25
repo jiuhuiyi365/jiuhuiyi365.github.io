@@ -58,9 +58,17 @@ async function* createImageIterator(dir: string) {
 }
 
 const targetDir = path.resolve(__dirname, '../../public/assets/images/banner/'); // 目标目录
-const fileIter = createImageIterator(targetDir);
+let fileIter: AsyncGenerator<string> | null = null;
+try {
+  const stat = await fs.stat(targetDir);
+  if (stat.isDirectory()) {
+    const imgs = await getImageFiles(targetDir);
+    if (imgs.length > 0) fileIter = createImageIterator(targetDir);
+  }
+} catch {}
 export default async (filename: string | null | undefined) => {
   if (filename) return filename;
+  if (!fileIter) return SITE_INFO.Cover;
   const { value } = await fileIter.next();
   return SITE_INFO.Site + `/assets/images/banner/${value}`
 }
