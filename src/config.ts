@@ -10,7 +10,7 @@ export default {
   // 网站作者
   Author: '.Yao',
   // 作者头像
-  Avatar: 'https://github.com/jiuhuiyi365.png',
+  Avatar: '/assets/images/avatar.jpg',
   // 网站座右铭
   Motto: '由缓至急，循循而进.',
   // Cover 网站缩略图
