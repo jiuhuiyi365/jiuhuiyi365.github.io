@@ -62,13 +62,7 @@ export default {
   ],
   // 侧边栏个人网站
   WebSites: [
-    // 仅支持 SVG 且 SVG 需放在 public/assets/images/svg/ 目录下，填入文件名即可 <不需要文件后缀名>（封装了 SVG 组件 为了极致压缩 SVG）
-    // 建议使用 https://tabler.io/icons 直接下载 SVG
     { text: 'Github', link: 'https://github.com/jiuhuiyi365', icon: 'WebSite_github' },
-    //{ text: '韩小韩API', link: 'https://api.vvhan.com', icon: 'WebSite_api' },
-    //{ text: '每日热榜', link: 'https://hot.vvhan.com', icon: 'WebSite_hot' },
-    //{ text: '骤雨重山图床', link: 'https://wp-cdn.4ce.cn', icon: 'WebSite_img' },
-    //{ text: 'HanAnalytics', link: 'https://analytics.vvhan.com', icon: 'WebSite_analytics' },
   ],
   // 侧边栏展示
   AsideShow: {
@@ -83,12 +77,7 @@ export default {
   },
   // DNS预解析地址
   DNSOptimization: [
-    // 'https://i0.wp.com',        // 不需要，删掉
-    // 'https://cn.cravatar.com',  // 暂时不需要，等开评论再加回来
-    // 'https://analytics.vvhan.com', // 别人的统计，删掉
-    'https://vh-api.4ce.cn',        // 保留，博客音乐功能可能用到
-    // 'https://registry.npmmirror.com', // 开发用，删掉
-    // 'https://pagead2.googlesyndication.com', // 广告，删掉
+    'https://vh-api.4ce.cn',
   ],
   // 博客音乐组件解析接口
   vhMusicApi: 'https://vh-api.4ce.cn/blog/meting',
@@ -105,7 +94,6 @@ export default {
       serverURL: ''
     }
   },
-  // Han Analytics 统计（https://github.com/uxiaohan/HanAnalytics）
   HanAnalytics: { enable: false, server: '', siteId: '' },
   // Google 广告
   GoogleAds: {
