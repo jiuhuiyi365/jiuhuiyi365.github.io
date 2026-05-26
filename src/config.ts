@@ -2,7 +2,7 @@ export default {
   // 网站标题
   Title: '姚振远博客',
   // 网站地址
-  Site: 'https://jiuhuiyi365.github.io',
+  Site: 'https://yaozhenyuanblog.cn',
   // 网站副标题
   Subtitle: '网安 | 逆向',
   // 网站描述
