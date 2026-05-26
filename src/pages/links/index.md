@@ -14,7 +14,12 @@ type: "links"
 
 ```yaml
 name: 姚振远博客
-link: https://jiuhuiyi365.github.io/
-avatar: https://github.com/jiuhuiyi365.png
+link: https://yaozhenyuanblog.cn/
+avatar: /assets/images/avatar.jpg
 desc: 由缓至急，循循而进.
+
+name: KelrinWu's Blog
+link: https://www.wqlblog.cn/
+avatar: https://www.wqlblog.cn/assets/images/avatar.png
+desc: 世界这么大，我想去看看.
 ```
