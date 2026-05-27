@@ -27,3 +27,6 @@ test/
 .edgeone/*
 .tef_dist/*
   
+# Local dev files
+CLAUDE.md
+script/
