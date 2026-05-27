@@ -17,6 +17,11 @@ import "./ArticleCard.less";
 		<h1 class="title"><a class="vh-ellipsis" href={`/article/${post.data.id}`}>{post.data.title}</a></h1>
 	</header>
 	<h2 class="vh-article-excerpt vh-ellipsis line-2">{description}</h2>
+	<div class="vh-article-meta" data-id={post.data.id}>
+		<span class="meta-pv"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"></path></svg><em>0</em></span>
+		<span class="meta-like"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M19.5 12.572l-7.5 7.428l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 1 1 7.5 6.572"></path></svg><em>0</em></span>
+		<span class="meta-cmt"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 20l1.3 -3.9c-2.427 -4.588 -1.168 -10.452 2.7 -13.3c3.88 -2.857 9.87 -1.92 12.6 2c2.74 3.93 1.7 9.35 -2.27 12.17l-1.13 .81"></path><path d="M9 15l4 -4"></path><path d="M16 18l-2.5 -2.5"></path><path d="M11 12l1 -1"></path></svg><em>0</em></span>
+	</div>
 	<h4 class="vh-article-taglist vh-ellipsis">
 		{post.data.tags.map((tag: string) => <a href={`/tag/${tag}`}>{tag}</a>)}
 	</h4>

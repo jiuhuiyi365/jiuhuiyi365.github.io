@@ -35,6 +35,8 @@ import pageviewInit from "@/scripts/Pageview";
 import likeInit from "@/scripts/Like";
 // 本地评论初始化
 import comment2Init from "@/scripts/Comment2";
+// 文章卡片统计初始化
+import articleMetaInit from "@/scripts/ArticleMeta";
 // 移动端侧边栏初始化
 import initMobileSidebar from "@/scripts/MobileSidebar";
 // Google 广告
@@ -89,6 +91,8 @@ const indexInit = async (only: boolean = true) => {
   likeInit();
   // 本地评论初始化
   comment2Init();
+  // 文章卡片统计
+  articleMetaInit();
   // Han Analytics 统计
   HanAnalyticsInit();
   // 打字效果
