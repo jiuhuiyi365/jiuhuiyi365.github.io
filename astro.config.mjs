@@ -30,7 +30,8 @@ export default defineConfig({
 		accessibility: true,
 		updateHead: true,
 		updateBodyClass: false,
-		globalInstance: true
+		globalInstance: true,
+			animateHistoryBrowsing: true
 	}),
 	Compress({ Image: false, Action: { Passed: async () => true } }),
 	sitemap({

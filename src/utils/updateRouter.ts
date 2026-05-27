@@ -8,7 +8,19 @@ type EventHandler = (event: Event) => void;
 
 //  进入页面时触发
 const inRouter = (handler: EventHandler) => {
-  const setup = () => window.swup.hooks.on("page:view", handler);
+  const setup = () => {
+    let called = false;
+    const safeHandler = (e: Event) => {
+      if (called) return;
+      called = true;
+      handler(e);
+    };
+    window.swup.hooks.on("page:view", safeHandler);
+    // 兜底：如果 page:view 因 Swup 动画竞态未触发，visit:end 保证执行
+    window.swup.hooks.on("visit:end", (e: Event) => {
+      if (!called) safeHandler(e);
+    });
+  };
   window.swup ? setup() : document.addEventListener("swup:enable", setup);
 };
 // 离开当前页面时触发
