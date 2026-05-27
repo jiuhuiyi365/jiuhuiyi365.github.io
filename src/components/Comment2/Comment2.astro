@@ -1,0 +1,19 @@
+---
+import "./Comment2.less";
+---
+
+<section class="vh-comment2">
+  <h3 class="comment-title">评论</h3>
+  <form class="comment-form">
+    <div class="comment-form-row">
+      <input type="text" class="comment-nick" placeholder="昵称" maxlength="20" required />
+      <input type="email" class="comment-mail" placeholder="邮箱（选填）" maxlength="50" />
+    </div>
+    <textarea class="comment-content" placeholder="写下你的评论..." maxlength="500" rows="4" required></textarea>
+    <div class="comment-form-footer">
+      <span class="comment-count-info">0 条评论</span>
+      <button type="submit" class="comment-submit">发表评论</button>
+    </div>
+  </form>
+  <div class="comment-list"></div>
+</section>

@@ -13,7 +13,11 @@ const FriendsInit = async (data: any) => {
 		if (typeof data === 'string') {
 			res = await $GET(api);
 		}
-		friendsDOM.innerHTML = res.map((i: any) => `<article><a href="${i.link}" target="_blank" rel="noopener nofollow"><header><h2>${i.title}</h2></header><p class="vh-ellipsis line-2">${i.content}</p><footer><span><img src="https://icon.bqb.cool/?url=${i.link.split('//')[1].split('/')[0]}" /><em class="vh-ellipsis">${i.auther}</em></span><time>${fmtDate(i.date, false)}前</time></footer></a></article>`).join('');
+		friendsDOM.innerHTML = res.map((i: any) => {
+			const blogUrl = i.blogLink || (i.link ? 'https://' + i.link.split('//')[1].split('/')[0] : '#');
+			const avatarSrc = i.avatar || (i.link ? `https://icon.bqb.cool/?url=${i.link.split('//')[1].split('/')[0]}` : '');
+			return `<article><a href="${blogUrl}" target="_blank" rel="noopener nofollow" class="friend-avatar-link"><img src="${avatarSrc}" alt="${i.auther}" /></a><div class="friend-content"><a href="${i.link}" target="_blank" rel="noopener nofollow" class="friend-article-link"><header><h2>${i.title}</h2></header><p class="vh-ellipsis line-2">${i.content}</p></a><footer><a href="${blogUrl}" target="_blank" rel="noopener nofollow" class="friend-name-link"><span><em class="vh-ellipsis">${i.auther}</em></span></a><time>${fmtDate(i.date, false)}前</time></footer></div></article>`;
+		}).join('');
 		// 图片懒加载
 		vhLzImgInit();
 	} catch {

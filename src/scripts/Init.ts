@@ -29,6 +29,12 @@ import initFriends from "@/scripts/Friends";
 import initTalking from "@/scripts/Talking";
 // 文章评论初始化
 import { checkComment, commentInit } from "@/scripts/Comment";
+// 浏览量初始化
+import pageviewInit from "@/scripts/Pageview";
+// 点赞初始化
+import likeInit from "@/scripts/Like";
+// 本地评论初始化
+import comment2Init from "@/scripts/Comment2";
 // 移动端侧边栏初始化
 import initMobileSidebar from "@/scripts/MobileSidebar";
 // Google 广告
@@ -77,6 +83,12 @@ const indexInit = async (only: boolean = true) => {
   SeoPushInit();
   // 文章评论初始化
   checkComment() && commentInit(checkComment(), commentLIst)
+  // 浏览量初始化
+  pageviewInit();
+  // 点赞初始化
+  likeInit();
+  // 本地评论初始化
+  comment2Init();
   // Han Analytics 统计
   HanAnalyticsInit();
   // 打字效果
