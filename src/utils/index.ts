@@ -7,7 +7,20 @@ dayjs.extend(timezone);
 import 'dayjs/locale/zh-cn'
 dayjs.locale('zh-cn');
 // 获取文章的描述
-const getDescription = (post: any, num: number = 150) => (post.rendered ? post.rendered.html.replace(/<[^>]+>/g, "").replace(/\s+/g, "") : post.body.replace(/\n/g, "").replace(/#/g, "")).slice(0, num) || '暂无简介'
+const getDescription = (post: any, num: number = 150) => {
+  let text: string;
+  if (post.rendered) {
+    text = post.rendered.html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+                              .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+                              .replace(/<[^>]+>/g, "").replace(/\s+/g, "");
+  } else {
+    text = post.body.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+                     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+                     .replace(/<[^>]+>/g, "")
+                     .replace(/#{1,6}\s*/g, "").replace(/\s+/g, "");
+  }
+  return text.slice(0, num) || '暂无简介';
+}
 //处理时间
 const fmtTime = (time: any, fmt: string = 'MMMM D, YYYY') => dayjs(time).utc().format(fmt)
 // 处理日期

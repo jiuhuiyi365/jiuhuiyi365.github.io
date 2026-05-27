@@ -18,8 +18,8 @@ const { prev, next } = getPrevNextPosts(post.data.id);
 import SITE_CONFIG from "@/config";
 const { Site, Title, Author, GoogleAds } = SITE_CONFIG;
 // 处理文章内容
-const description = getDescription(post);
 const { Content, remarkPluginFrontmatter } = await render(post);
+const description = post.data.description || getDescription(post);
 // 文章字数和阅读时间
 const { reading_time, article_word_count } = remarkPluginFrontmatter;
 // 公共 Layout
