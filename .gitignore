@@ -30,3 +30,6 @@ test/
 # Local dev files
 CLAUDE.md
 script/
+
+# Draft articles (not ready to commit)
+drafts/
