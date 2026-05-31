@@ -220,13 +220,11 @@ img[data-vh-lz-src] {
 }
 
 // swup 动画效果
-html.swup-enabled,
 html.is-changing {
 	.vh-animation {
 		&.vh-animation-init {
-			transform: translateY(0);
-			opacity: 1;
-			animation-play-state: paused;
+			opacity: 1 !important;
+			transform: translateY(0) !important;
 		}
 	}
 }
@@ -236,7 +234,6 @@ html.is-animating {
 		&.vh-animation-init {
 			transform: translateY(0.88rem);
 			opacity: 0;
-			animation-play-state: paused;
 		}
 	}
 }

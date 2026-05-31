@@ -105,10 +105,12 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
      └───────────┘ └───────────┘</code></pre>
 
 <ul>
-<li><strong>Host</strong>：AI 应用（如 Claude Desktop、IDE 插件），负责管理 MCP Client 实例</li>
-<li><strong>Client</strong>：与单个 MCP Server 保持 1:1 连接，维护会话状态</li>
-<li><strong>Server</strong>：向 LLM 暴露工具（Tools）、资源（Resources）、提示模板（Prompts）</li>
+<li><strong>Host</strong>：AI 应用（如 Claude Desktop、Claude Code），负责管理 MCP Client 实例，读取配置文件发现可用的 Server</li>
+<li><strong>Client</strong>：Host 内的一个通用组件，负责与<strong>多个</strong> MCP Server 建立连接。对每个 Server 创建一个独立的 <strong>Session</strong>（会话），实现 1:1 的通信管理</li>
+<li><strong>Server</strong>：向 LLM 暴露工具（Tools）、资源（Resources）、提示模板（Prompts）。Client 在连接时会查询 Server 的能力列表，<strong>动态注册</strong>可用的工具</li>
 </ul>
+
+<div class="tip-box"><div class="tip-label">关键点</div>一个 Host 中只有一个 MCP Client，但这个 Client 可以同时连接多个 Server。例如 Claude Code 同时连接文件系统 Server、数据库 Server 和 Git Server，Client 会从每个 Server 动态发现并注册各自的 Tools，然后将它们统一暴露给 LLM 使用。</div>
 
 <h2 id="s3">3. 通信方式</h2>
 <h3>stdio（标准输入输出）</h3>
