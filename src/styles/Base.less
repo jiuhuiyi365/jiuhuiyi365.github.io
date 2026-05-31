@@ -226,7 +226,7 @@ html.is-changing {
 		&.vh-animation-init {
 			transform: translateY(0);
 			opacity: 1;
-			animation: none;
+			animation-play-state: paused;
 		}
 	}
 }
@@ -236,6 +236,7 @@ html.is-animating {
 		&.vh-animation-init {
 			transform: translateY(0.88rem);
 			opacity: 0;
+			animation-play-state: paused;
 		}
 	}
 }

@@ -108,6 +108,13 @@ const indexInit = async (only: boolean = true) => {
 };
 
 export default () => {
+  // 修复 Swup 返回按钮页面空白问题
+  document.addEventListener('swup:enable', () => {
+    const swup = (window as any).swup;
+    if (swup) {
+      swup.options.animateHistoryBrowsing = true;
+    }
+  });
   // 首次初始化
   indexInit();
   // 进入页面时触发
