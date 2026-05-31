@@ -216,24 +216,25 @@ img[data-vh-lz-src] {
 	opacity: 0;
 	animation: 300ms vh-init-show;
 	animation-fill-mode: forwards;
-	transition: opacity 0.18s ease-in-out, transform 0.18s ease-in-out;
+	transition: opacity 0.3s ease-out, transform 0.3s ease-out;
 }
 
-// swup 动画效果
-html.is-changing {
-	.vh-animation {
-		&.vh-animation-init {
-			opacity: 1 !important;
-			transform: translateY(0) !important;
-		}
-	}
-}
-
+// swup 过渡效果：is-animating 隐藏内容，移除后 CSS transition 平滑显示
 html.is-animating {
 	.vh-animation {
 		&.vh-animation-init {
 			transform: translateY(0.88rem);
 			opacity: 0;
+			transition: none;
+		}
+	}
+}
+
+html.is-changing {
+	.vh-animation {
+		&.vh-animation-init {
+			opacity: 1 !important;
+			transform: translateY(0) !important;
 		}
 	}
 }

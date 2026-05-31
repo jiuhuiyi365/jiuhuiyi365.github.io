@@ -108,11 +108,12 @@ const indexInit = async (only: boolean = true) => {
 };
 
 export default () => {
-  // 修复 Swup 浏览器后退动画问题：@swup/astro 不传递 animateHistoryBrowsing，手动补丁
+  // 修复 Swup 动画冲突：禁用 Swup 的动画检测，由 CSS 过渡处理
   document.addEventListener('swup:enable', () => {
     const swup = (window as any).swup;
     if (swup) {
-      swup.options.animateHistoryBrowsing = true;
+      swup.options.animateHistoryBrowsing = false;
+      swup.options.animationSelector = false;
     }
   });
   // 首次初始化
