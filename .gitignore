@@ -29,7 +29,9 @@ test/
   
 # Local dev files
 CLAUDE.md
-script/
+script/*
+!script/setup-drafts.cjs
 
 # Draft articles (not ready to commit)
 drafts/
+src/content/blog/_drafts

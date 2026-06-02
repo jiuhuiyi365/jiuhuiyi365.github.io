@@ -3,11 +3,12 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "node ./script/setup-drafts.cjs && astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "newpost": "node ./script/newpost.js",
+    "drafts": "node ./script/setup-drafts.cjs",
     "offdev": "astro preferences disable devToolbar",
     "ondev": "astro preferences enable devToolbar"
   },
