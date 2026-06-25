@@ -8,6 +8,12 @@ export default {
       link: 'https://www.wqlblog.cn/',
       avatar: 'https://www.wqlblog.cn/assets/images/avatar.png',
       descr: '世界这么大，我想去看看.'
+    },
+    {
+      name: 'Chow',
+      link: 'https://yongkangblog.top/',
+      avatar: 'https://icon.bqb.cool/?url=yongkangblog.top',
+      descr: ''
     }
   ]
 }
