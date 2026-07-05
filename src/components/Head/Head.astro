@@ -4,14 +4,54 @@ import SITE_CONFIG from "@/config";
 const canonicalData = new URL(Astro.url.pathname, Astro.site);
 const canonicalURL = canonicalData.href.replace(/\/+$/, "");
 // 页面内容的元数据
-const { Title, Keywords, Description, PageCover } = Astro.props;
+const { Title, Keywords, Description, PageCover, PubDate, UpdateDate } = Astro.props;
 const { Site, Title: SiteName, Subtitle, Author, Cover, DNSOptimization } = SITE_CONFIG;
 const WebTitle = Title || SiteName;
 const SiteCover = Site + Cover;
 const WebCover = PageCover || SiteCover;
+const categories = Astro.url.pathname.includes('/article/') ? 'article' : 'website';
+// 格式化日期为 ISO 8601
+const formatDate = (d) => {
+	if (!d) return null;
+	const date = new Date(d);
+	return isNaN(date.getTime()) ? null : date.toISOString().replace("Z", "+08:00");
+};
+const pubDateISO = formatDate(PubDate);
+const updateDateISO = formatDate(UpdateDate) || pubDateISO;
 // Schema.org 结构化数据（JSON-LD）
-const WebSiteData = { "@context": "https://schema.org", "@type": "WebSite", url: canonicalURL, name: WebTitle, description: Description, inLanguage: "zh-CN", image: WebCover, publisher: { "@type": "Organization", name: WebTitle, logo: { "@type": "ImageObject", url: SiteCover } } };
-const ArticleData = { "@context": "https://schema.org", "@type": "BlogPosting", mainEntityOfPage: { "@type": "WebPage", "@id": canonicalURL }, headline: WebTitle, description: Description, image: [WebCover], datePublished: new Date().toISOString().replace("Z", `+08:00`), dateModified: new Date().toISOString().replace("Z", `+08:00`), author: { "@type": "Person", name: Author, url: Site }, publisher: { "@type": "Organization", name: SiteName, logo: { "@type": "ImageObject", url: SiteCover } }, keywords: (Keywords || ["Astro", "分享", "博客"]).join(", ") };
+const WebSiteData = {
+	"@context": "https://schema.org",
+	"@type": "WebSite",
+	url: canonicalURL,
+	name: SiteName,
+	description: Description,
+	inLanguage: "zh-CN",
+	image: WebCover,
+	publisher: { "@type": "Organization", name: SiteName, logo: { "@type": "ImageObject", url: SiteCover } }
+};
+const ArticleData = {
+	"@context": "https://schema.org",
+	"@type": "BlogPosting",
+	mainEntityOfPage: { "@type": "WebPage", "@id": canonicalURL },
+	headline: WebTitle,
+	description: Description,
+	image: [WebCover],
+	datePublished: pubDateISO,
+	dateModified: updateDateISO,
+	author: { "@type": "Person", name: Author, url: Site },
+	publisher: { "@type": "Organization", name: SiteName, logo: { "@type": "ImageObject", url: SiteCover } },
+	keywords: (Keywords || ["Astro", "分享", "博客"]).join(", ")
+};
+// BreadcrumbList 结构化数据
+const BreadcrumbData = {
+	"@context": "https://schema.org",
+	"@type": "BreadcrumbList",
+	itemListElement: [
+		{ "@type": "ListItem", position: 1, name: "首页", item: Site },
+		{ "@type": "ListItem", position: 2, name: WebTitle, item: canonicalURL }
+	]
+};
+const JSONLD = categories === 'article' ? ArticleData : WebSiteData;
 
 // 基础 样式
 import "@/styles/Base.less";

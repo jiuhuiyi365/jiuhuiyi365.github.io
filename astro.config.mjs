@@ -1,6 +1,7 @@
 import path from "path";
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import robotsTxt from 'astro-robots-txt';
 import Compress from "@playform/compress";
 import Compressor from "astro-compressor";
 import { defineConfig } from 'astro/config';
@@ -36,7 +37,17 @@ export default defineConfig({
 	Compress({ Image: false, Action: { Passed: async () => true } }),
 	sitemap({
 		// 处理末尾带 / 的 url
-		serialize: (item) => ({ ...item, url: item.url.endsWith('/') ? item.url.slice(0, -1) : item.url })
+		serialize: (item) => ({ ...item, url: item.url.endsWith('/') ? item.url.slice(0, -1) : item.url }),
+		entryLimit: 5000,
+		lastmod: new Date(),
+	}),
+	robotsTxt({
+		sitemap: true,
+		policy: [
+			{ userAgent: '*', allow: '/', disallow: ['/api/', '/admin/'] },
+			{ userAgent: 'Googlebot', allow: '/', disallow: ['/api/'] },
+			{ userAgent: 'Baiduspider', allow: '/', disallow: ['/api/'] },
+		],
 	}),
 	mdx({ extendMarkdownConfig: false }),
 	Compressor({ gzip: false, brotli: true, fileExtensions: [".html", ".css", ".js"] })
