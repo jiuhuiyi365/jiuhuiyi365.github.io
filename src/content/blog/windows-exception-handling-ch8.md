@@ -1,0 +1,719 @@
+---
+title: "Windows 异常处理机制：从 SEH 到调试器陷阱"
+date: 2026-07-10
+categories: "安全与逆向"
+tags: ["逆向", "Windows", "异常处理", "SEH", "调试", "VEH"]
+id: "windows-exception-handling-ch8"
+---
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--card:#1a1d28;--accent:#6c9eeb;--accent2:#a78bfa;
+--text:#e1e4ed;--text2:#9ca3b0;--border:#2a2d3a;--code-bg:#151720;--code-border:#252837;
+--tag-bg:#252837;--tag-text:#8b9cc7;--success:#34d399;--warn:#fbbf24;--danger:#f87171}
+.hero,.container{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;color:#e1e4ed;line-height:1.85;font-size:15px}
+.hero,.container,.article-content,.toc,.nav-bar,.footer{background:#0f1117}
+.hero{background:linear-gradient(135deg,#1e2a4a 0%,#161929 40%,#1a1530 100%);border-bottom:1px solid var(--border);padding:48px 24px 40px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 50%,rgba(108,158,235,0.06) 0%,transparent 60%),radial-gradient(ellipse at 70% 50%,rgba(167,139,250,0.04) 0%,transparent 60%);pointer-events:none}
+.hero h1{font-size:28px;font-weight:700;color:#fff;max-width:800px;margin:0 auto 16px;line-height:1.4;position:relative;letter-spacing:-0.3px}
+.hero .subtitle{color:var(--text2);font-size:15px;margin-bottom:16px;position:relative}
+.hero-meta{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;position:relative}
+.tag{display:inline-block;background:var(--tag-bg);color:var(--tag-text);padding:4px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border)}
+.tag-accent{background:rgba(108,158,235,0.12);color:var(--accent);border-color:rgba(108,158,235,0.2)}
+.container{max-width:820px;margin:0 auto;padding:32px 24px 80px}
+.article-content h2{font-size:21px;font-weight:700;color:#fff;margin:40px 0 16px;padding-left:14px;border-left:3px solid var(--accent);line-height:1.4}
+.article-content h3{font-size:17px;font-weight:600;color:#d1d5e0;margin:28px 0 12px}
+.article-content h4{font-size:15px;font-weight:600;color:var(--accent);margin:20px 0 10px}
+.article-content p{margin:12px 0;color:#e1e4ed!important;line-height:1.85;background:#0f1117!important}
+.article-content a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(108,158,235,0.3);transition:border-color .2s}
+.article-content a:hover{border-bottom-color:var(--accent)}
+.article-content strong{color:#fff;font-weight:600}
+.article-content img{max-width:100%;border-radius:8px;margin:16px 0;border:1px solid var(--border)}
+.article-content ul,.article-content ol{padding-left:24px;margin:12px 0}
+.article-content li{margin:6px 0;color:#e1e4ed!important;line-height:1.75}
+.article-content li::marker{color:var(--accent)}
+pre{background:var(--code-bg)!important;border:1px solid var(--code-border);border-radius:10px;padding:20px!important;margin:16px 0!important;overflow-x:auto;font-size:13.5px!important;line-height:1.65!important;position:relative}
+pre::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(108,158,235,0.2),transparent)}
+code{font-family:"JetBrains Mono","Fira Code","Consolas",monospace!important;font-size:13.5px!important}
+p code,li code,td code{background:rgba(108,158,235,0.08)!important;color:var(--accent)!important;padding:2px 8px!important;border-radius:5px!important;border:1px solid rgba(108,158,235,0.12)!important;font-size:13px!important}
+pre code{background:none!important;border:none!important;padding:0!important;color:#c9d1d9!important}
+blockquote{border-left:3px solid var(--accent2)!important;background:rgba(167,139,250,0.04)!important;padding:14px 20px!important;margin:16px 0!important;border-radius:0 8px 8px 0!important;color:#e1e4ed!important;font-size:14px}
+blockquote code{color:var(--accent2)!important}
+.tip-box{background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.15);border-radius:10px;padding:14px 18px;margin:16px 0;font-size:14px}
+.tip-box .tip-label{color:var(--success);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.warn-box{background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.15);border-radius:10px;padding:14px 18px;margin:16px 0;font-size:14px}
+.warn-box .warn-label{color:var(--warn);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.danger-box{background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);border-radius:10px;padding:14px 18px;margin:16px 0;font-size:14px}
+.danger-box .danger-label{color:var(--danger);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+table{border-collapse:collapse;width:100%;margin:16px 0;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--code-bg)!important}
+th{background:var(--tag-bg);color:var(--accent);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:0.5px}
+th,td{padding:10px 16px;border:1px solid var(--border);text-align:left;font-size:14px;background:transparent}
+td{color:#e1e4ed!important;background:var(--code-bg)!important}
+.footer{text-align:center;padding:32px;color:var(--text2);font-size:12px;border-top:1px solid var(--border);margin-top:40px}
+.toc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin:0 0 32px}
+.toc-title{font-size:13px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.toc ul{list-style:none;padding-left:0}
+.toc li{margin:6px 0;color:#e1e4ed!important}
+.toc a{color:#9ca3b0!important;text-decoration:none;font-size:14px;transition:color .2s;display:block;padding:4px 0;border-bottom:none}
+.toc a:hover{color:var(--accent)!important}
+.toc a::before{content:'\203A';margin-right:10px;color:var(--accent);font-weight:700}
+.toc .toc-sub{padding-left:20px}
+.back{display:inline-block;color:var(--accent)!important;text-decoration:none;margin-bottom:24px;font-size:0.95em}
+.back:hover{text-decoration:underline}
+.nav-bar{display:flex;justify-content:space-between;align-items:center;margin-top:40px;padding-top:20px;border-top:1px solid var(--border)}
+.nav-bar a{color:var(--accent);text-decoration:none;font-size:13px}
+.nav-bar a:hover{opacity:0.8}
+@media(max-width:768px){.hero h1{font-size:22px}.container{padding:20px 16px 60px}pre{padding:14px!important;font-size:12.5px!important}}
+</style>
+
+<div class="hero"><h1>Windows 异常处理机制：从 SEH 到调试器陷阱</h1>
+<p class="subtitle">异常处理机制的原理、数据结构与逆向分析实战</p>
+<div class="hero-meta"><span class="tag tag-accent">安全与逆向</span><span class="tag">Windows</span><span class="tag">异常处理</span><span class="tag">SEH</span><span class="tag">调试</span></div>
+</div>
+<div class="container">
+<a class="back" href="/archives">← 总目录</a>
+
+<div class="toc"><div class="toc-title">目录</div><ul>
+<li><a href="#s81">1. 基本概念</a>
+  <div class="toc-sub">
+  <a href="#s811">1.1 异常列表</a>
+  <a href="#s812">1.2 异常处理的基本过程</a>
+  </div>
+</li>
+<li><a href="#s82">2. SEH 结构化异常处理</a>
+  <div class="toc-sub">
+  <a href="#s821">2.1 相关数据结构</a>
+  <a href="#s822">2.2 SEH 的安装和卸载</a>
+  <a href="#s823">2.3 实例跟踪</a>
+  </div>
+</li>
+<li><a href="#s83">3. SEH 原理与设计</a>
+  <div class="toc-sub">
+  <a href="#s831">3.1 异常分发过程</a>
+  <a href="#s832">3.2 线程异常处理</a>
+  <a href="#s833">3.3 栈展开</a>
+  <a href="#s834">3.4 编译器增强</a>
+  <a href="#s835">3.5 顶层异常处理</a>
+  <a href="#s836">3.6 安全性（SafeSEH/SEHOP）</a>
+  </div>
+</li>
+<li><a href="#s84">4. VEH 向量化异常处理</a></li>
+<li><a href="#s85">5. x64 异常处理</a></li>
+<li><a href="#s86">6. 注意事项</a></li>
+<li><a href="#s87">7. 实际应用</a>
+  <div class="toc-sub">
+  <a href="#s871">7.1 SEH 反调试</a>
+  <a href="#s872">7.2 VEH 实现 API Hook</a>
+  </div>
+</li>
+<li><a href="#s88">8. 实战：调试器的本质——陷阱机制</a></li>
+</ul></div>
+
+<div class="article-content">
+
+<h2 id="s81">1. 异常处理的基本概念</h2>
+
+<p>Windows 的异常处理是操作系统处理程序错误或异常的一系列流程和技术的总称。主要涉及 <strong>SEH</strong>（结构化异常处理）和 <strong>VEH</strong>（向量化异常处理，Windows XP 以上版本中使用）两种技术。</p>
+
+<div class="tip-box">
+<div class="tip-label">什么是异常</div>
+所谓异常就是在应用程序正常执行过程中发生的不正常事件。由 CPU 引发的异常称为硬件异常，例如访问一个无效的内存地址。由操作系统或应用程序引发的异常称为软件异常。
+</div>
+
+<p>Intel 从 386 开始的 IA-32 处理器中引入了中断（Interrupt）和异常（Exception）的概念。中断是由外部硬件设备或异步事件产生的，而异常是由内部事件产生的，又可分为故障（Fault）、陷阱（Trap）和终止（Abort）3 类。</p>
+
+<table>
+<tr><th></th><th>中断（Interrupt）</th><th>异常（Exception）</th></tr>
+<tr><td><strong>来源</strong></td><td>外部（硬件设备）</td><td>内部（CPU 执行指令时）</td></tr>
+<tr><td><strong>是否同步</strong></td><td>异步——随时可能来</td><td>同步——执行到特定指令才产生</td></tr>
+<tr><td><strong>例子</strong></td><td>键盘按下、鼠标移动</td><td>除零、空指针、断点指令</td></tr>
+<tr><td><strong>谁触发</strong></td><td>外部硬件设备</td><td>CPU 执行指令时自行产生</td></tr>
+</table>
+
+<h4>Fault / Trap / Abort 的区别</h4>
+
+<table>
+<tr><th>英文</th><th>含义</th><th>可恢复？</th></tr>
+<tr>
+<td><strong>Fault（故障）</strong></td>
+<td>出了点小毛病，修好了重新来。CPU 保存现场后调用处理函数，如果修复成功就重新执行那条出错的指令。</td>
+<td>✅ 可恢复</td>
+</tr>
+<tr>
+<td><strong>Trap（陷阱）</strong></td>
+<td>程序掉进了 CPU 挖的"陷阱"里。处理完后执行下一条指令，而不是重复出错的指令。</td>
+<td>✅ 可恢复</td>
+</tr>
+<tr>
+<td><strong>Abort（终止）</strong></td>
+<td>彻底完蛋了，救不回来。发生了严重错误，系统必须重启。</td>
+<td>❌ 不可恢复</td>
+</tr>
+</table>
+
+<div class="tip-box">
+<div class="tip-label">现实类比</div>
+<strong>故障（Fault）</strong> = 开车撞到石头 → 把石头搬走 → 重新发动继续开<br>
+<strong>陷阱（Trap）</strong> = 走路踩到陷阱 → 掉进去 → 被捞出来 → 从下一条路继续走<br>
+<strong>终止（Abort）</strong> = 桥断了 → 没救了 → 叫拖车（重启系统）
+</div>
+
+<h3 id="s811">1.1 异常列表</h3>
+
+<table>
+<tr><th>中断类型号</th><th>异常名称</th><th>相关指令</th></tr>
+<tr><td>0</td><td>除数为 0 中断</td><td>DIV / IDIV</td></tr>
+<tr><td>1</td><td>调试异常</td><td>任何指令</td></tr>
+<tr><td>3</td><td>断点中断</td><td>INT 3 指令</td></tr>
+<tr><td>4</td><td>溢出中断</td><td>INTO</td></tr>
+<tr><td>5</td><td>边界检查</td><td>BOUND</td></tr>
+<tr><td>6</td><td>非法指令故障</td><td>非法指令编码</td></tr>
+<tr><td>7</td><td>设备不可用</td><td>浮点指令或 WAIT</td></tr>
+<tr><td>8</td><td>双重故障</td><td>任何指令</td></tr>
+<tr><td>10</td><td>无效 TSS</td><td>JMP / CALL / IRET</td></tr>
+<tr><td>11</td><td>段不存在异常</td><td>装载段寄存器</td></tr>
+<tr><td>12</td><td>栈异常</td><td>装载 SS 寄存器</td></tr>
+<tr><td>13</td><td>通用保护异常</td><td>任何特权指令</td></tr>
+<tr><td>14</td><td>页异常</td><td>任何访问内存的指令</td></tr>
+</table>
+
+<p>除了 CPU 能够捕获事件并引发硬件异常外，在代码中可以主动引发软件异常，只需调用 <code>RaiseException()</code> 函数：</p>
+
+<pre><code>VOID RaiseException(
+  DWORD dwExceptionCode,      // 标识所引发异常的代码
+  DWORD dwExceptionFlags,     // 异常是否继续执行的标识
+  DWORD nNumberOfArguments,   // 附加信息
+  const DWORD *lpArguments    // 附加信息
+);</code></pre>
+
+<h3 id="s812">1.2 异常处理的基本过程</h3>
+
+<p>Windows 正常启动后，将运行在保护模式下。当有中断或异常发生时，CPU 会通过<strong>中断描述符表（IDT）</strong>来寻找处理函数。IDT 表是 CPU（硬件）和操作系统（软件）交接中断和异常的关口。</p>
+
+<div class="tip-box">
+<div class="tip-label">IDT 关键特点</div>
+<ul>
+<li>IDT 位于物理内存中，共 256 项。32 位模式下每项 8 字节，64 位模式每项 64 字节。</li>
+<li>IDT 位置由 CPU 的 IDTR 寄存器描述（48 位：高 32 位基址，低 16 位长度）。</li>
+<li>LIDT 是特权指令，只能在 Ring 0 下运行。</li>
+<li>IDT 每一项是一个"门"结构：任务门、中断门或陷阱门。</li>
+</ul>
+</div>
+
+<p>CPU 通过中断类型号（中断向量号）作为数组下标来查表：</p>
+
+<pre><code>    执行 int 3 指令（断点）
+          │
+          ▼
+    CPU 得到中断类型号 = 3        ← 指令里硬编码的
+          │
+          ▼
+    CPU 读 IDTR 寄存器：
+    基地址 + 3 × 每项大小         ← 数组查表
+          │
+          ▼
+    IDT[3] = 门描述符
+    从中取出：段选择子 + 偏移地址   ← 处理函数入口
+          │
+          ▼
+    CPU 跳转到 nt!KiTrap03         ← 去执行处理函数</code></pre>
+
+<p>常见的异常代码对应的值：</p>
+
+<table>
+<tr><th>异常名称</th><th>对应值</th><th>说明</th></tr>
+<tr><td>STATUS_GUARD_PAGE_VIOLATION</td><td>0x80000001</td><td>读写属性为 PAGE_GUARD 的页面</td></tr>
+<tr><td>STATUS_BREAKPOINT</td><td>0x80000003</td><td>断点异常（INT 3）</td></tr>
+<tr><td>STATUS_ACCESS_VIOLATION</td><td>0xC0000005</td><td>读写内存冲突</td></tr>
+<tr><td>STATUS_ILLEGAL_INSTRUCTION</td><td>0xC000001D</td><td>遇到无效指令</td></tr>
+<tr><td>STATUS_INTEGER_DIVIDE_BY_ZERO</td><td>0xC0000094</td><td>除 0 错误</td></tr>
+<tr><td>STATUS_STACK_OVERFLOW</td><td>0xC00000FD</td><td>栈溢出</td></tr>
+</table>
+
+<p>用 WinDbg 可以看到实际的 IDT 内容：</p>
+
+<pre><code>// 在 WinDbg 中查看 IDT
+kd&gt; !idt
+Dumping IDT:
+00: 80543360 nt!KiTrap00      // 第 0 项：除零异常处理函数
+01: 805434dc nt!KiTrap01      // 第 1 项：单步异常
+03: 80543810 nt!KiTrap03      // 第 3 项：断点异常
+...
+0E: 8054568c nt!KiTrap0E      // 第 14 项：页异常</code></pre>
+
+<h4>异常处理基本流程</h4>
+
+<p>发生异常时，CPU 根据中断类型号执行对应的中断处理程序（如 KiTrapXX）。各个异常处理函数会将异常信息进行封装，主要内容有：</p>
+
+<p><strong>（1）异常记录（EXCEPTION_RECORD）：</strong></p>
+
+<pre><code>typedef struct _EXCEPTION_RECORD {
+  DWORD ExceptionCode;                 // 异常代码
+  DWORD ExceptionFlags;                // 异常标志
+  struct _EXCEPTION_RECORD *ExceptionRecord;
+  PVOID ExceptionAddress;              // 异常发生时的地址
+  DWORD NumberParameters;
+  DWORD ExceptionInformation[EXCEPTION_MAXIMUM_PARAMETERS];
+} EXCEPTION_RECORD;</code></pre>
+
+<p><strong>（2）陷阱帧（TRAP_FRAME）：</strong> 精确描述发生异常时线程的状态，包含每个寄存器的状态。当要把控制权交给用户注册的异常处理程序时，会将上述结构转换为 CONTEXT 结构。</p>
+
+<p>包装完毕后，异常处理函数会进一步调用系统内核的 <code>nt!KiDispatchException</code> 函数来处理异常：</p>
+
+<pre><code>VOID KiDispatchException(
+  PEXCEPTION_RECORD ExceptionRecord,
+  PKEXCEPTION_FRAME ExceptionFrame,
+  IN KTRAP_FRAME TrapFrame,
+  IN KPROCESSOR_MODE PreviousMode,   // 内核模式还是用户模式
+  IN BOOLEAN FirstChance             // 是否第 1 次处理
+);</code></pre>
+
+<p><strong>用户态的异常处理流程：</strong></p>
+
+<ol>
+<li>如果程序正在被调试，将异常信息发送给用户态调试器（第 1 次机会）。</li>
+<li>如果没有调试器或未处理，在栈上放置 EXCEPTION_RECORD 和 CONTEXT 结构，将控制权返回用户态 ntdll!KiUserExceptionDispatcher，由其调用 ntdll!RtlDispatchException 进行用户态的异常处理。</li>
+<li>如果仍未处理，再次发送给调试器（第 2 次机会）。</li>
+<li>如果第 2 次未处理，将异常分发给子系统进程 csrss.exe 进行处理（弹出"应用程序错误"对话框）。</li>
+</ol>
+
+<h2 id="s82">2. SEH 结构化异常处理</h2>
+
+<p><strong>SEH</strong>（Structured Exception Handling）是 Windows 操作系统用于自身除错的一种机制，也是开发人员处理程序错误或异常的强有力的武器。</p>
+
+<div class="tip-box">
+<div class="tip-label">通俗理解</div>
+SEH 就像给代码买的一份"保险"。当程序出现异常时，系统会按照事先注册的"处理电话本"逐一打电话，问哪个处理程序愿意处理这个异常。
+</div>
+
+<h3 id="s821">2.1 相关数据结构</h3>
+
+<h4>TIB 结构</h4>
+
+<p>TIB（Thread Information Block）是保存线程基本信息的数据结构。在 x86 平台下，<strong>FS 段选择器指向当前线程的 TEB</strong>：</p>
+
+<pre><code>typedef struct _NT_TIB {
+  struct _EXCEPTION_REGISTRATION_RECORD *ExceptionList;  // fs:[0]
+  PVOID StackBase;
+  PVOID StackLimit;
+  PVOID SubsystemTib;
+  union { PVOID FiberData; ULONG Version; };
+  PVOID ArbitraryUserPointer;
+  struct _NT_TIB *Self;
+} NT_TIB;</code></pre>
+
+<p>与异常处理相关的项是指向 EXCEPTION_REGISTRATION_RECORD 结构的指针 <code>ExceptionList</code>，它位于 TIB 的偏移 0 处——即 <code>fs:[0]</code>（x64 下为 <code>gs:[0]</code>）。</p>
+
+<h4>EXCEPTION_REGISTRATION_RECORD 结构</h4>
+
+<pre><code>typedef struct _EXCEPTION_REGISTRATION_RECORD {
+  struct _EXCEPTION_REGISTRATION_RECORD *Next;  // 指向下一个结构
+  PEXCEPTION_ROUTINE Handler;                   // 异常处理回调函数
+} EXCEPTION_REGISTRATION_RECORD;</code></pre>
+
+<p>其中 <code>Next</code> 指向下一个 ERR 结构，形成链状结构；链表头存放在 <code>fs:[0]</code> 中。由于 TEB 是线程的私有数据结构，每个线程都有自己的异常处理链表，即 SEH 机制的作用范围仅限于当前线程。</p>
+
+<h3 id="s822">2.2 SEH 处理程序的安装和卸载</h3>
+
+<p><strong>安装：</strong></p>
+
+<pre><code>; 安装 SEH 处理程序
+assume fs:nothing
+push offset SEHandler    ; Handler 地址
+push fs:[0]              ; 当前链表头（Next 指针）
+mov fs:[0], esp          ; 修改 TIB 中的 ExceptionList 为新节点</code></pre>
+
+<p><strong>卸载：</strong></p>
+
+<pre><code>; 卸载 SEH 处理程序
+mov esp, dword ptr fs:[0]  ; 恢复栈指针
+pop dword ptr fs:[0]       ; 恢复原来的链表头</code></pre>
+
+<h3 id="s823">2.3 实例跟踪</h3>
+
+<p>使用 WinDbg 查看 SEH 链表：</p>
+
+<pre><code>; 查看 SEH 链表
+0:000&gt; !exchain
+0012FFB8: EXCEPTION_REGISTRATION_RECORD
+  +0x000 Next   : 0x0012FFE0 EXCEPTION_REGISTRATION_RECORD
+  +0x004 Handler: 0x00401000 EXCEPTION_DISPOSITION
+
+; 观察 EXCEPTION_RECORD 结构
+0:000&gt; dt EXCEPTION_RECORD 0012fcd0
++0x000 ExceptionCode   : 0xc0000005  (STATUS_ACCESS_VIOLATION)
++0x004 ExceptionFlags  : 0
++0x008 ExceptionRecord : (null)
++0x00c ExceptionAddress: 0x00401038</code></pre>
+
+<h2 id="s83">3. SEH 异常处理程序原理及设计</h2>
+
+<h3 id="s831">3.1 异常分发的详细过程</h3>
+
+<p>用户态的异常分发是从 <code>ntdll!KiUserExceptionDispatcher</code> 函数开始的：</p>
+
+<pre><code>KiUserExceptionDispatcher(
+  PEXCEPTION_RECORD pExcptRec,
+  CONTEXT *pContext
+) {
+  DWORD retValue;
+  retValue = RtlDispatchException(pExcptRec, pContext);
+  if (retValue == 0) {
+    NtContinue(pContext, FALSE);        // 异常已被处理
+  } else {
+    NtRaiseException(pExcptRec, pContext, FALSE); // 第 2 次机会
+  }
+}</code></pre>
+
+<p><strong>RtlDispatchException 核心流程：</strong></p>
+
+<ol>
+<li>调用 VEH 异常处理例程（如果 VEH 处理了，直接返回）</li>
+<li>获取栈的范围（调用 RtlpGetStackLimits）</li>
+<li>从 fs:[0] 获取 SEH 链的头节点</li>
+<li>SEHOP 验证——如果启用了，验证 SEH 链完整性</li>
+<li>遍历 SEH 链表，逐个调用回调函数：
+  <ul>
+    <li><code>ExceptionContinueExecution</code> — 修复完毕，继续执行</li>
+    <li><code>ExceptionContinueSearch</code> — 不能处理，找下一个</li>
+    <li><code>ExceptionNestedException</code> — 处理异常时又发生异常</li>
+  </ul>
+</li>
+<li>调用 VEH 的 ContinueHandler</li>
+</ol>
+
+<h3 id="s832">3.2 线程异常处理</h3>
+
+<p>SEH 是基于线程的。异常发生时，异常现场被保存在发生异常的线程的栈上，系统从该线程的 TIB 中取得 SEH 链表的表头。同一进程中的 A、B 两个线程，A 发生的异常无法被 B 的异常处理程序捕获。</p>
+
+<h4>回调函数原型</h4>
+
+<pre><code>EXCEPTION_DISPOSITION __cdecl _except_handler(
+  struct _EXCEPTION_RECORD *ExceptionRecord,
+  void *EstablisherFrame,
+  struct _CONTEXT *ContextRecord,
+  void *DispatcherContext
+);</code></pre>
+
+<h4>异常处理程序的返回值</h4>
+
+<table>
+<tr><th>返回值</th><th>值</th><th>含义</th></tr>
+<tr><td>ExceptionContinueExecution</td><td>0</td><td>麻烦已经解决，回去重新执行</td></tr>
+<tr><td>ExceptionContinueSearch</td><td>1</td><td>搞不定，找其他人处理</td></tr>
+<tr><td>ExceptionNestedException</td><td>2</td><td>处理麻烦时自己也遇到麻烦了</td></tr>
+<tr><td>ExceptionCollidedUnwind</td><td>3</td><td>恢复现场时遇到麻烦了</td></tr>
+</table>
+
+<h4>示例：处理除零错误</h4>
+
+<pre><code>; 修正除零错误
+DivHandler proc uses ebx esi edi pExcept, pFrame, pContext, pDispatch
+  mov esi, pExcept
+  mov edi, pContext
+  ; 检查是否为除零错误
+  cmp [esi].ExceptionCode, STATUS_INTEGER_DIVIDE_BY_ZERO
+  jne continue_search
+  ; 将被除数改为非零值
+  mov [edi].regEcx, 10
+  mov eax, ExceptionContinueExecution
+  ret
+continue_search:
+  mov eax, ExceptionContinueSearch
+  ret
+DivHandler endp</code></pre>
+
+<h3 id="s833">3.3 栈展开（Stack Unwind）</h3>
+
+<div class="warn-box">
+<div class="warn-label">什么是栈展开</div>
+当所有异常处理程序都无法处理异常时，系统在终结程序之前，给所有注册的回调函数一次"清理"的机会。此时 ExceptionFlags 被置为 2（UNWIND），ExceptionCode 被置为 STATUS_UNWIND（0xC0000027）。
+</div>
+
+<p>微软提供了现成的 API：</p>
+
+<pre><code>RtlUnwind(
+  PVOID VirtualTargetFrame,  // 展开停止的 SEH 链节点
+  PVOID TargetPC,            // 展开后执行的指令地址
+  EXCEPTION_RECORD *ExceptionRecord,
+  DWORD ReturnValue
+);</code></pre>
+
+<h3 id="s834">3.4 MSC 编译器对 SEH 的增强</h3>
+
+<p>C 语言使用 <code>__try/__except/__finally</code> 关键字：</p>
+
+<pre><code>__try {
+  int *pValue = NULL;
+  *pValue = 0x55555555;  // 引发内存访问异常
+}
+__except (EXCEPTION_EXECUTE_HANDLER) {
+  printf("异常被捕获并处理!\n");
+}</code></pre>
+
+<p>编译器扩展的关键数据结构：</p>
+
+<pre><code>struct _EH3_EXCEPTION_REGISTRATION {
+  struct _EH3_EXCEPTION_REGISTRATION *Next;
+  PVOID ExceptionHandler;                  // (except_handler3)
+  PSCOPETABLE_ENTRY ScopeTable;            // 作用域表
+  DWORD TryLevel;                          // 当前 Try 级别
+};</code></pre>
+
+<p>异常筛选器返回值：</p>
+
+<table>
+<tr><th>返回值</th><th>含义</th></tr>
+<tr><td>EXCEPTION_EXECUTE_HANDLER（1）</td><td>执行异常处理代码</td></tr>
+<tr><td>EXCEPTION_CONTINUE_SEARCH（0）</td><td>不处理，继续寻找</td></tr>
+<tr><td>EXCEPTION_CONTINUE_EXECUTION（-1）</td><td>异常已修复，继续执行</td></tr>
+</table>
+
+<div class="warn-box">
+<div class="warn-label">注意</div>
+筛选器的返回值与前面异常回调函数的返回值是两码事，不要混为一谈。
+</div>
+
+<h3 id="s835">3.5 顶层异常处理</h3>
+
+<p>顶层（Top-Level）异常处理是系统设置的默认异常处理程序。所有未处理的异常最终交给 <code>kernel32!UnhandledExceptionFilter</code> 处理。</p>
+
+<p>用户可以通过 <code>SetUnhandledExceptionFilter</code> API 设置自己的回调函数：</p>
+
+<pre><code>LONG WINAPI TopLevelExceptionFilter(
+  struct _EXCEPTION_POINTERS *ExceptionInfo
+) {
+  // 创建 Dump 文件
+  HANDLE hDumpFile = CreateFile("crash.dmp", ...);
+  MINIDUMP_EXCEPTION_INFORMATION ExpInfo;
+  ExpInfo.ThreadId = GetCurrentThreadId();
+  ExpInfo.ExceptionPointers = ExceptionInfo;
+  MiniDumpWriteDump(GetCurrentProcess(), ...);
+  return EXCEPTION_EXECUTE_HANDLER;
+}</code></pre>
+
+<h3 id="s836">3.6 异常处理程序的安全性</h3>
+
+<h4>SafeSEH 机制</h4>
+
+<p>从 Windows XP SP2 开始引入。编译器在 PE 头中记录所有合法的异常处理程序地址表，异常分发时 <code>RtlIsValidHandler</code> 检查地址是否在合法表中。</p>
+
+<h4>SEHOP 机制</h4>
+
+<p>从 Windows 7/Vista SP1 开始加入，防止 SEH 链被覆写：</p>
+
+<ul>
+<li>检测 SEH 链每个节点是否都在栈中且可访问</li>
+<li>检测最后一个节点的异常处理函数是否为 <code>ntdll!FinalExceptionHandler</code></li>
+<li>如果 SEH 链完整性遭到破坏（如被缓冲区溢出攻击），SEHOP 能阻止 Shellcode 运行</li>
+</ul>
+
+<h2 id="s84">4. 向量化异常处理（VEH）</h2>
+
+<p><strong>VEH</strong>（Vectored Exception Handling）是 Windows XP 以上版本增加的异常处理机制。与 SEH 不同，VEH 不依赖于栈结构，在进程范围内全局有效。</p>
+
+<pre><code>// 注册 VEH 回调函数
+PVOID WINAPI AddVectoredExceptionHandler(
+  ULONG FirstHandler,
+  PVECTORED_EXCEPTION_HANDLER VectoredHandler
+);
+
+// 回调函数原型
+LONG CALLBACK VectoredHandler(
+  PEXCEPTION_POINTERS ExceptionInfo
+);</code></pre>
+
+<pre><code>// VEH 示例
+LONG WINAPI VectoredHandler(PEXCEPTION_POINTERS ExceptionInfo) {
+  PCONTEXT pContext = ExceptionInfo-&gt;ContextRecord;
+  pContext-&gt;Eax = (DWORD)&amp;validAddr;
+  return EXCEPTION_CONTINUE_EXECUTION;
+}
+
+int WINAPI WinMain(...) {
+  PVOID handle = AddVectoredExceptionHandler(TRUE, VectoredHandler);
+  // 故意产生异常
+  __asm {
+    xor eax, eax
+    mov [eax], eax    // 写地址 0 -> 产生异常
+  }
+  RemoveVectoredExceptionHandler(handle);
+  return 0;
+}</code></pre>
+
+<h4>SEH 与 VEH 对比</h4>
+
+<table>
+<tr><th>比较项</th><th>SEH</th><th>VEH</th></tr>
+<tr><td>注册机制</td><td>信息保存在栈中</td><td>独立链表（ntdll 中）</td></tr>
+<tr><td>优先级</td><td>在 VEH 之后被调用</td><td>优先于 SEH 被调用</td></tr>
+<tr><td>作用范围</td><td>基于线程</td><td>进程全局有效</td></tr>
+<tr><td>栈展开</td><td>需要栈展开，2 次被调用机会</td><td>不需要栈展开，1 次机会</td></tr>
+<tr><td>安全性</td><td>栈易被破坏（SafeSEH/SEHOP）</td><td>存储在堆中，相对安全</td></tr>
+</table>
+
+<h2 id="s85">5. x64 平台上的异常处理</h2>
+
+<p>x64 平台上 SEH 的数据结构和存储位置发生了根本性变化——采用<strong>基于 Table 的异常处理机制</strong>：</p>
+
+<pre><code>// 函数信息表（RUNTIME_FUNCTION），存放在 .pdata 段
+typedef struct _RUNTIME_FUNCTION {
+  ULONG BeginAddress;        // 函数起始地址（RVA）
+  ULONG EndAddress;          // 函数结束地址（RVA）
+  ULONG UnwindData;          // 展开数据（RVA）
+} RUNTIME_FUNCTION;
+
+// 展开信息（UNWIND_INFO）
+typedef struct _UNWIND_INFO {
+  UCHAR Version;
+  UCHAR Flags;
+  UCHAR SizeOfProlog;
+  UCHAR CountOfCodes;
+  UCHAR FrameRegister;
+  UCHAR FrameOffset;
+  UNWIND_CODE UnwindCode[];
+} UNWIND_INFO;</code></pre>
+
+<p>异常发生时，ntdll!RtlDispatchException 根据 RIP 查找 ExceptionTable，从 UnWindInfo 中取得 ExceptionHandler 并执行。</p>
+
+<h4>WOW64 下的异常分发</h4>
+
+<p>当 64 位内核要给 WOW64 进程分发异常时，异常信息先到达 64 位 ntdll!KiUserExceptionDispatcher，Wow64 将其转换为 32 位的异常和环境记录，再交给 32 位 ntdll!KiUserExceptionDispatcher 处理。</p>
+
+<h2 id="s86">6. 注意事项</h2>
+
+<ol>
+<li>线程异常回调函数的调用约定是 <code>__cdecl</code>，与普通 API 不同</li>
+<li>异常处理嵌套时，必须注意对寄存器的保护</li>
+<li>要实现精确控制，汇编语言最合适；仅实现异常处理，C 的 __try/__except 更方便</li>
+<li>SEH 在所有 Windows 平台都适用，但实现细节可能略有变化</li>
+<li>VEH 是全局性的，对局部代码异常保护没必要使用 VEH</li>
+</ol>
+
+<div class="warn-box">
+<div class="warn-label">重要提示</div>
+SEH 是微软未公开的内部机制。虽然其工作过程变化不大，但实现细节略有变化。如果编写跨平台代码，需要注意不同 Windows 版本的差异。
+</div>
+
+<h2 id="s87">7. 实际应用</h2>
+
+<h3 id="s871">7.1 利用 SEH 清除硬件断点（反调试）</h3>
+
+<pre><code>; 异常回调 - 清除硬件断点
+PerThread_Handler proc uses ebx pExcept, pFrame, pContext, pDispatch
+  mov eax, pContext
+  ; 修改 EIP，改变程序流程
+  lea ebx, ExecuteHere
+  mov [eax].regEip, ebx
+  ; 对 DR0-DR3 清零，使断点失效
+  xor ebx, ebx
+  mov [eax].Dr0, ebx
+  mov [eax].Dr1, ebx
+  mov [eax].Dr2, ebx
+  mov [eax].Dr3, ebx
+  mov [eax].Dr7, 0x155
+  mov eax, ExceptionContinueExecution
+  ret
+PerThread_Handler endp</code></pre>
+
+<div class="tip-box">
+<div class="tip-label">反调试原理</div>
+该示例通过主动制造内存访问异常，在 SEH 回调函数中修改 CONTEXT 结构。一方面将 EIP 指向安全地址以改变程序流程；另一方面将调试寄存器 DR0-DR3 清零，使调试器设置的硬件断点失效。
+</div>
+
+<h3 id="s872">7.2 用 VEH 实现 API Hook</h3>
+
+<p>利用 VEH 的全局特性和优先于 SEH 的特性，可以在进程内的指定代码处下断点，捕获断点异常进行干预操作。只需更改 1 字节（写入 0xCC）即可实现 API Hook。</p>
+
+<h2 id="s88">8. 实战：调试器的本质——陷阱机制</h2>
+
+<p>学完上面这些，你会发现一个很有意思的事实：<strong>调试器的三大核心功能，全都在用 CPU 的陷阱机制。</strong></p>
+
+<table>
+<tr><th>调试功能</th><th>背后原理</th><th>对应的陷阱</th></tr>
+<tr>
+<td><strong>🔴 断点（F2）</strong></td>
+<td>把目标地址的第一个字节改成 0xCC（int 3）<br>CPU 执行到这里自动触发断点异常</td>
+<td>IDT[3] → KiTrap03</td>
+</tr>
+<tr>
+<td><strong>🔵 单步（F8/F7）</strong></td>
+<td>设置 EFLAGS 的 TF 位 = 1<br>CPU 每执行完一条指令就产生单步异常</td>
+<td>IDT[1] → KiTrap01</td>
+</tr>
+<tr>
+<td><strong>🟢 内存断点</strong></td>
+<td>地址填入 DR0~DR3 调试寄存器<br>CPU 访问该地址时触发调试异常</td>
+<td>IDT[1] 或 IDT[14]</td>
+</tr>
+</table>
+
+<pre><code>// 调试器下断点的本质：偷偷改成 int 3
+// 原始代码
+00401000  mov  eax, dword ptr [40101C]
+
+// 你按下 F2 后——调试器把第一个字节改成 0xCC
+00401000  int  3  // ← 0xCC，断点陷阱</code></pre>
+
+<p>完整流程：</p>
+
+<pre><code>你按 F9 让程序运行
+      │
+      ▼
+程序跑到 00401000
+      │
+      ▼   ← 这里有个 0xCC（int 3）
+CPU 执行 int 3 → 中断类型号 = 3
+      │
+      ▼
+IDT[3] → nt!KiTrap03 → EXCEPTION_RECORD + TRAP_FRAME
+      │
+      ▼
+KiDispatchException → 调试器收到 EXCEPTION_DEBUG_EVENT
+      │
+      ▼
+OllyDbg/x64dbg 暂停，等待你操作
+      │
+  ┌───┴───┐
+  │       │
+单步     继续
+  │       │
+  ▼       ▼
+设TF=1  恢复原指令
+继续执行 跳过断点</code></pre>
+
+<div class="tip-box">
+<div class="tip-label">理解了这个，你就明白了</div>
+调试器不是在"控制"程序，而是在<strong>挖陷阱让程序掉进去</strong>。程序每次掉坑，你都能看看它的状态（寄存器、内存、堆栈）。<br><br>
+这也解释了为什么很多反调试手段会检查 PEB.BeingDebugged、检测 int 3 指令、或者修改 IDT——它们就是在<strong>检查自己脚下有没有坑</strong>，或者把坑填了不让调试器用。
+</div>
+
+<div class="tip-box">
+<div class="tip-label">反调试思路</div>
+• 检测代码段中是否有 0xCC → 有人在代码里挖了坑（断点）<br>
+• 检查 TF 标志位 → 有人在单步跟踪<br>
+• 用 VEH 接管 int 3 异常 → 让调试器收不到断点通知<br>
+• 修改 IDT 表项 → 把陷阱指向自己的处理函数<br><br>
+这就是为什么第 8 章讲异常处理——这些知识是玩逆向的"内功"。
+</div>
+
+<h2>本章小结</h2>
+
+<div class="tip-box">
+<div class="tip-label">核心要点回顾</div>
+<ul>
+<li><strong>IDT（中断描述符表）：</strong> CPU 与操作系统交接中断和异常的关口，共 256 项。</li>
+<li><strong>SEH（结构化异常处理）：</strong> 基于栈帧的线程级异常处理机制，通过 fs:[0] 指向的链表管理回调函数。</li>
+<li><strong>VEH（向量化异常处理）：</strong> 进程级异常处理机制，优先于 SEH 被调用。</li>
+<li><strong>异常分发流程：</strong> 调试器 → VEH → SEH → 顶层异常处理 → 终结处理。</li>
+<li><strong>栈展开：</strong> 系统给所有异常处理程序最后一次清理资源的机会。</li>
+<li><strong>SafeSEH/SEHOP：</strong> 防止 SEH 链表被缓冲区溢出攻击覆写。</li>
+<li><strong>x64 异常处理：</strong> 基于 Table 的机制，信息存放在 .pdata 段。</li>
+</ul>
+</div>
+
+<p>异常处理作为一种优秀的处理手段，已经在各种编程语言中得到了推广。读者一定要深入理解异常处理的内涵——这对提高程序的稳定性及了解和对抗反调试手段都非常有帮助。</p>
+
+<div class="footer">内容整理自《加密与解密（第4版）》第8章 · 段钢 主编，已做精简和重新组织</div>
+
+</div></div>
