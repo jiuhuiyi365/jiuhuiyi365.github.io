@@ -90,7 +90,11 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
 <li><a href="#s9">9. 导出表</a></li>
 <li><a href="#s10">10. 重定位表</a></li>
 <li><a href="#s11">11. 加载与执行流程</a></li>
-<li><a href="#s12">12. 实用分析工具</a></li>
+<li><a href="#s12">12. 地址转换：VA / RVA / File Offset</a></li>
+<li><a href="#s13">13. 资源的三层目录结构</a></li>
+<li><a href="#s14">14. 调试目录</a></li>
+<li><a href="#s15">15. 其他 PE 结构</a></li>
+<li><a href="#s16">16. 实用分析工具</a></li>
 </ul></div>
 
 <div class="article-content">
@@ -411,7 +415,117 @@ typedef struct _IMAGE_BASE_RELOCATION {
 <li>PATH 环境变量中的目录</li>
 </ol>
 
-<h2 id="s12">12. 实用分析工具</h2>
+<h2 id="s12">12. 地址转换：VA / RVA / File Offset</h2>
+
+<p>这是 PE 分析中最基础也是最常用的转换，请务必掌握。</p>
+
+<p>当 FileAlignment 与 SectionAlignment 不同时，磁盘映像和内存映像不同，因此必须在<strong>每个区块内部</strong>进行转换。</p>
+
+<pre><code>RVA = VA - ImageBase
+VA  = ImageBase + RVA
+
+File Offset = RVA - (Section.VirtualAddress - Section.PointerToRawData)
+           = RVA - Delta
+
+其中 Delta = VirtualAddress - PointerToRawData（每个区块不同）</code></pre>
+
+<p><strong>实例计算：</strong></p>
+
+<table>
+<tr><th>区块</th><th>VirtualAddress (RVA)</th><th>PointerToRawData</th><th>Delta</th></tr>
+<tr><td>.text</td><td>0x1000</td><td>0x400</td><td>0xC00</td></tr>
+<tr><td>.rdata</td><td>0x2000</td><td>0x600</td><td>0x1A00</td></tr>
+<tr><td>.data</td><td>0x3000</td><td>0x800</td><td>0x2800</td></tr>
+</table>
+
+<pre><code>例 1：VA = 0x00401112（属于 .text 块）
+File Offset = 0x00401112 - 0x00400000 - 0xC00 = 0x512
+
+例 2：VA = 0x00402002（属于 .rdata 块）
+File Offset = 0x00402002 - 0x00400000 - 0x1A00 = 0x602</code></pre>
+
+<div class="tip-box">
+<div class="tip-label">实用工具</div>
+使用 LordPE 等工具，单击 "RLC" 按钮打开地址转换器，输入 VA 即可自动计算。建议实际分析时用工具辅助。
+</div>
+
+<h2 id="s13">13. 资源的三层目录结构</h2>
+
+<p>资源用类似文件系统目录的方式保存，通常包含 <strong>3 层</strong>：</p>
+
+<pre><code>第1层（资源类型）    第2层（资源 ID）     第3层（代码页）    资源数据
+
+[ICON (3)] ───────── [ID=101] ──────────── [英文] ──────────&gt; 图标数据
+                        ├───────────────── [中文] ──────────&gt; 图标数据2
+                        └───────────────── [日文] ──────────&gt; 图标数据3
+
+[MENU (4)] ──────────── [ID=200] ──────────── [英文] ──────────&gt; 菜单数据</code></pre>
+
+<table>
+<tr><th>ID</th><th>资源类型</th></tr>
+<tr><td>1</td><td>Cursor（光标）</td></tr>
+<tr><td>2</td><td>Bitmap（位图）</td></tr>
+<tr><td>3</td><td>Icon（图标）</td></tr>
+<tr><td>4</td><td>Menu（菜单）</td></tr>
+<tr><td>5</td><td>Dialog（对话框）</td></tr>
+<tr><td>6</td><td>String（字符串表）</td></tr>
+<tr><td>14</td><td>Version Info（版本信息）</td></tr>
+</table>
+
+<p>核心结构：<code>IMAGE_RESOURCE_DIRECTORY</code>（目录节点）→ <code>IMAGE_RESOURCE_DIRECTORY_ENTRY</code>（目录条目）→ <code>IMAGE_RESOURCE_DATA_ENTRY</code>（数据入口）。资源名称字符串使用 <strong>Unicode 编码</strong>。资源是 PE 文件所有结构中最复杂的部分。</p>
+
+<h2 id="s14">14. 调试目录（Debug Directory）</h2>
+
+<p>数据目录表 Index=6 指向调试目录，由 IMAGE_DEBUG_DIRECTORY 结构数组组成：</p>
+
+<pre><code>typedef struct _IMAGE_DEBUG_DIRECTORY {
+    DWORD Characteristics;
+    DWORD TimeDateStamp;
+    WORD  MajorVersion;
+    WORD  MinorVersion;
+    DWORD Type;                 // 调试信息类型
+    DWORD SizeOfData;           // 调试数据大小
+    DWORD AddressOfRawData;     // 加载后的 RVA（为 0 表示不被映射）
+    DWORD PointerToRawData;     // 文件偏移
+} IMAGE_DEBUG_DIRECTORY;</code></pre>
+
+<p>最常见的调试信息存储方式是 <strong>PDB 文件</strong>：</p>
+<ul>
+<li>Visual Studio 6.0：debug 头部以 "NB10" 标识开始</li>
+<li>Visual Studio .NET &amp; 后续版本：debug 头部以 "RSDS" 标识开始</li>
+</ul>
+
+<h2 id="s15">15. 其他 PE 结构</h2>
+
+<h4>TLS 回调（安全重点）</h4>
+
+<p>TLS（Thread Local Storage）回调函数在程序的 <strong>AddressOfEntryPoint 之前执行</strong>。数据目录 Index=9 指向 <code>IMAGE_TLS_DIRECTORY</code>，其中 <code>AddressOfCallBacks</code> 是一个函数指针数组。程序退出时 TLS 回调还会再执行一次。</p>
+
+<pre><code>typedef struct _IMAGE_TLS_DIRECTORY32 {
+    DWORD StartAddressOfRawData;     // TLS 数据起始（VA，不是 RVA!）
+    DWORD EndAddressOfRawData;
+    DWORD AddressOfIndex;            // TLS 索引
+    DWORD AddressOfCallBacks;        // 回调函数指针数组 ★
+    DWORD SizeOfZeroFill;
+    DWORD Characteristics;
+} IMAGE_TLS_DIRECTORY32;</code></pre>
+
+<div class="warn-box">
+<div class="warn-label">注意</div>
+&bull; IMAGE_TLS_DIRECTORY 中的地址是 <strong>VA</strong> 而不是 RVA！<br>
+&bull; 该结构本身不在 .tls 区块中，而在 .rdata 区块中。<br>
+&bull; TLS 回调可用于在入口点之前执行反调试代码，是软件保护的重要手段。
+</div>
+
+<h4>绑定输入（Bound Import）</h4>
+
+<p>绑定输入是对输入表的一种优化：在安装程序时预先把 DLL 的真实地址计算好写入 IAT，以加快程序启动速度。Index=11 指向绑定输入表。如果绑定成功但 DLL 版本不匹配，加载器会自动回退到正常导入流程。</p>
+
+<h4>延迟载入（Delay Load Import）</h4>
+
+<p>延迟载入通过链接器和运行库加入额外代码实现——函数首次被调用时才加载 DLL。Index=13 指向延迟载入描述符。</p>
+
+<h2 id="s16">16. 实用分析工具</h2>
 
 <table><tr><th>工具</th><th>功能</th><th>命令/用法</th></tr>
 <tr><td>PE-bear</td><td>可视化 PE 结构分析</td><td>GUI 工具，拖入文件即可</td></tr>
@@ -430,6 +544,20 @@ dumpbin /exports file.dll      # 查看导出表
 dumpbin /relocations file.exe  # 查看重定位表
 dumpbin /sections file.exe     # 查看节表
 dumpbin /disasm file.exe       # 反汇编代码段</code></pre>
+
+<h3>关键概念记忆口诀</h3>
+
+<div class="tip-box">
+<div class="tip-label">口诀</div>
+<ul>
+<li><strong>找 PE 头：</strong>文件偏移 3C 找 lfanew，lfanew 指向 PE 头</li>
+<li><strong>PE 头结构：</strong>签名 + 文件头 + 可选头</li>
+<li><strong>可选头最重要：</strong>入口点、基地址、数据目录表</li>
+<li><strong>数据目录 16 项：</strong>0=输出 1=输入 2=资源 5=重定位 6=调试 9=TLS</li>
+<li><strong>输入表两数组：</strong>INT（原名）和 IAT（加载后变为地址）</li>
+<li><strong>地址转换：</strong>RVA - Delta = File Offset（每个区块 Delta 不同）</li>
+</ul>
+</div>
 
 <div class="footer">如果这篇文章对你有帮助，欢迎分享给更多人</div>
 
