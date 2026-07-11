@@ -187,6 +187,8 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
 
 <div class="tip-box"><div class="tip-label">TIP</div>x64dbg 的<strong>日志断点</strong>（Log breakpoint）是 GDB 没有的能力。设置后每次命中只在日志窗口输出指定信息而不暂停程序，非常适合批量记录函数调用参数。</div>
 
+<div class="warn-box"><div class="warn-label">加密调试提醒</div>软件断点通过将指令首字节改为 <code>0xCC</code>（INT3）实现，这会<strong>修改内存代码</strong>。调试加密/加壳程序时，修改内存可能导致解密后的代码校验不通过或数据错误。<strong>硬件断点</strong>（CPU 调试寄存器 DR0-DR3）不修改任何内存，仅由 CPU 在指令执行时检查，在加密相关调试中极其有用。</div>
+
 <h2 id="s6">5. 内置分析与脱壳能力</h2>
 <p>这是 x64dbg 相比 GDB 最大的优势领域：</p>
 
