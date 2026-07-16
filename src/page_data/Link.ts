@@ -14,6 +14,12 @@ export default {
       link: 'https://yongkangblog.top/',
       avatar: 'https://icon.bqb.cool/?url=yongkangblog.top',
       descr: ''
+    },
+    {
+      name: 'Archer',
+      link: 'https://code.houyiblog.cn/',
+      avatar: 'https://icon.bqb.cool/?url=code.houyiblog.cn',
+      descr: '一个专注于 Markdown 内容的简洁个人博客.'
     }
   ]
 }
