@@ -12,13 +12,13 @@ export default {
     {
       name: 'Chow',
       link: 'https://yongkangblog.top/',
-      avatar: 'https://icon.bqb.cool/?url=yongkangblog.top',
+      avatar: 'https://yongkangblog.top/assets/images/toux.webp',
       descr: ''
     },
     {
       name: 'Archer',
       link: 'https://code.houyiblog.cn/',
-      avatar: 'https://icon.bqb.cool/?url=code.houyiblog.cn',
+      avatar: 'https://code.houyiblog.cn/_astro/avatar.DqHNetJz_Z5bLML.webp',
       descr: '一个专注于 Markdown 内容的简洁个人博客.'
     }
   ]
