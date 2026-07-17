@@ -1,7 +1,7 @@
 ---
 title: "OnePlus 7T 刷机笔记：TWRP + Magisk 完整流程"
 date: 2026-07-16
-categories: "环境搭建"
+categories: "Android"
 tags: ["刷机", "OnePlus", "TWRP", "Magisk", "Android"]
 id: "oneplus-7t-flashing-guide"
 ---
