@@ -1,0 +1,13 @@
+User-agent: *
+Disallow: /api/
+Disallow: /admin/
+Allow: /
+
+User-agent: Googlebot
+Disallow: /api/
+Allow: /
+
+User-agent: Baiduspider
+Disallow: /api/
+Allow: /
+Sitemap: https://yaozhenyuanblog.cn/sitemap-index.xml
