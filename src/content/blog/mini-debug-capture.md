@@ -95,6 +95,25 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
 
 <p>在逆向工程中，经常需要在特定断点处捕获寄存器值、内存数据和函数参数。通常的做法是用 x64dbg 或 WinDbg 手动下断点、查看数据。但当需要：</p>
 
+<p>在此之前尝试过两种方案：<strong>x64dbg + MCP</strong> 和 <strong>Frida Hook</strong>，各有明显短板。</p>
+
+<table>
+<tr><th>方案</th><th>问题</th></tr>
+<tr><td>x64dbg + MCP</td><td>MCP 在控制 x64dbg 时频繁出现卡死、断点失效、进程不同步等问题，兼容性不稳定，在大批量自动化断点捕获场景中几乎不可用</td></tr>
+<tr><td>Frida Hook</td><td>Frida 的 <code>Interceptor.attach</code> 只能捕获函数的入参和返回值，函数体内部中间状态的寄存器值、栈上数据无法直接获取。想要读取内部数据需要手动计算栈偏移、解析结构体，操作复杂且容易出错</td></tr>
+</table>
+
+<p>因此需要一个满足以下条件的工具：</p>
+
+<ul>
+<li>完全自动化，不需要人工干预断点操作</li>
+<li>能捕获任意断点处的完整寄存器状态和内存数据</li>
+<li>稳定可靠，不依赖 GUI 调试器的 IPC 接口</li>
+<li>轻量级，纯 Python 实现，方便 AI 调用和控制</li>
+</ul>
+
+<p>Mini Debug Capture 就是为这个场景设计的——一个纯粹用 Python + Windows Debug API 实现的轻量级用户态调试器。</p>
+
 <ul>
 <li>在程序运行到特定位置时自动、重复地捕获数据</li>
 <li>配合自动化脚本或 AI 工具完成批量捕获</li>
