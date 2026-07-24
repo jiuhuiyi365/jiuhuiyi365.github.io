@@ -87,12 +87,12 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
 <li><a href="#sec-ai">5. 如何增强 AI 逆向能力</a></li>
 <li><a href="#sec-tech">6. 核心技术细节</a>
   <div class="toc-sub">
-  <a href="#sec-suspend">6.1 线程挂起机制</a>
-  <a href="#sec-skip">6.2 崩溃跳过机制</a>
-  <a href="#sec-caller">6.3 调用者函数名解析</a>
-  <a href="#sec-late">6.4 延迟 Hook 机制</a>
-  </div>
-</li>
+	  <a href="#sec-suspend">6.1 线程挂起机制</a>
+	  <a href="#sec-buffer">6.2 GUI 缓冲刷新与行数限制</a>
+	  <a href="#sec-detach">6.3 Auto-Detach：自动解除 Hook</a>
+	  <a href="#sec-skip">6.4 崩溃跳过机制</a>
+	  <a href="#sec-caller">6.5 调用者函数名解析</a>
+	  <a href="#sec-late">6.6 延迟 Hook 机制</a>
 <li><a href="#sec-limit">7. 已知局限</a></li>
 <li><a href="#sec-output">8. 输出格式与用法</a></li>
 </ul></div>
@@ -302,7 +302,18 @@ AI 可以据此知道：<br>
 <li>如果主 Hook 脚本崩溃，还有一个应急恢复脚本确保线程不会永久挂起</li>
 </ul>
 
-<h3 id="sec-detach">6.2 Auto-Detach：达到上限自动解除 Hook</h3>
+<h3 id="sec-buffer">6.2 GUI 缓冲刷新与行数限制</h3>
+
+<p>为避免大量日志输出阻塞 UI 线程，GUI 采用队列缓冲 + 定时刷新策略：</p>
+
+<ul>
+<li>日志行和调用行分别写入独立的 <code>deque</code> 缓冲区</li>
+<li>每 100ms 统一刷新一次到界面控件，而非每收到一条消息就刷新</li>
+<li>界面最多保留 <strong>5000 行</strong>，超出部分自动从顶部裁剪，防止内存无限增长</li>
+<li>日志文件不受此限制，始终写入完整数据</li>
+</ul>
+
+<h3 id="sec-detach">6.3 Auto-Detach：达到上限自动解除 Hook</h3>
 
 <p>当 <code>Max Calls</code> 大于 0 时，每个 Hook 在被调用指定次数后自动通过 <code>Interceptor.detach()</code> 移除自身。这样做有三个好处：</p>
 
@@ -314,7 +325,7 @@ AI 可以据此知道：<br>
 
 <p>解除操作通过 <code>setImmediate()</code> 推迟到 onEnter 返回后执行，确保不会在回调中途移除 Hook 导致崩溃。</p>
 
-<h3 id="sec-skip">6.3 崩溃跳过机制</h3>
+<h3 id="sec-skip">6.4 崩溃跳过机制</h3>
 
 <p>在对数千个函数批量 Hook 时，某些函数会因为 Frida 无法处理（如函数体过小、跨页边界、非标准调用约定等）而崩溃。工具的处理策略：</p>
 
@@ -326,7 +337,7 @@ AI 可以据此知道：<br>
 <li>工具不会因此中断，而是继续处理剩余函数</li>
 </ul>
 
-<h3 id="sec-caller">6.4 调用者函数名解析</h3>
+<h3 id="sec-caller">6.5 调用者函数名解析</h3>
 
 <p>工具记录调用链时，<code>caller</code> 字段使用 <strong>IDA 函数名</strong>而非原始返回地址。实现方式：</p>
 
@@ -340,7 +351,7 @@ AI 可以据此知道：<br>
 
 <p>这使得调用链输出中的 <code>caller</code> 字段始终是可读的函数名，而非无语义的十六进制地址。</p>
 
-<h3 id="sec-late">6.5 延迟 Hook 机制</h3>
+<h3 id="sec-late">6.6 延迟 Hook 机制</h3>
 
 <p>某些 DLL 不是在进程启动时立即加载的，而是运行时按需动态加载。如果此时尝试 Hook 其中的函数，会因为模块不存在而失败。解决方案：</p>
 
