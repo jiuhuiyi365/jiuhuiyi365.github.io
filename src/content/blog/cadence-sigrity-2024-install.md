@@ -94,12 +94,6 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
 
 <h3>1.1 下载</h3>
 
-<p>资源来自网盘分享（Team EFA 破解版）：</p>
-<div class="tip-box">
-<div class="tip-label">下载</div>
-<strong style="color:#fff;font-size:16px;"><a href="https://pan.baidu.com/s/1lCTfWOw9sLgQC9TpMhLkHw?pwd=x88g" style="color:#6c9eeb;font-size:16px;">Cadence Sigrity 2024 下载链接</a></strong> 提取码: <code style="font-size:15px;color:#fff;">x88g</code>
-</div>
-
 <p>下载后你应该得到以下文件/目录结构：</p>
 
 <pre><code>Cadence Systems Analysis Sigrity 2024/
