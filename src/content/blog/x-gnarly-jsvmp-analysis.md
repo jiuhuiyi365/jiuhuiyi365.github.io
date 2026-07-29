@@ -1,7 +1,7 @@
 ---
 title: "X-Gnarly 332 位签名还原：从 JSVMP 语义插桩到纯算法复现"
 date: 2026-07-28
-categories: "安全与逆向"
+categories: "Android"
 tags: ["X-Gnarly", "JSVMP", "JavaScript逆向", "动态插桩", "ChaCha"]
 id: "x-gnarly-jsvmp-analysis"
 ---
@@ -73,7 +73,7 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
 
 <div class="hero"><h1>X-Gnarly 332 位签名还原：从 JSVMP 语义插桩到纯算法复现</h1>
 <p class="subtitle">以 webmssdk 5.2.1 为样本，解析数据封装、变种流加密与差分验证方法</p>
-<div class="hero-meta"><span class="tag tag-accent">安全与逆向</span><span class="tag">X-Gnarly</span><span class="tag">JSVMP</span><span class="tag">动态插桩</span><span class="tag">ChaCha</span></div>
+<div class="hero-meta"><span class="tag tag-accent">Android</span><span class="tag">X-Gnarly</span><span class="tag">JSVMP</span><span class="tag">动态插桩</span><span class="tag">ChaCha</span></div>
 </div>
 <div class="container">
 <a class="back" href="/archives">← 总目录</a>
