@@ -1,7 +1,7 @@
 ---
 title: "ctf-skills 深度解析：让 AI 获得可执行的 CTF 安全工作流"
 date: 2026-07-31
-categories: "Agent"
+categories: "安全与逆向"
 tags: ["Agent Skills", "CTF", "AI安全", "逆向工程", "安全自动化"]
 id: "ctf-skills-agent-security-workflow"
 ---
@@ -73,7 +73,7 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
 
 <div class="hero"><h1>ctf-skills 深度解析：让 AI 获得可执行的 CTF 安全工作流</h1>
 <p class="subtitle">从 Agent Skills 机制、11 个专业模块到逆向分析与流量取证的实际能力边界</p>
-<div class="hero-meta"><span class="tag tag-accent">Agent</span><span class="tag">Agent Skills</span><span class="tag">CTF</span><span class="tag">AI安全</span><span class="tag">安全自动化</span></div>
+<div class="hero-meta"><span class="tag tag-accent">安全与逆向</span><span class="tag">Agent Skills</span><span class="tag">CTF</span><span class="tag">AI安全</span><span class="tag">安全自动化</span></div>
 </div>
 <div class="container">
 <a class="back" href="/archives">← 总目录</a>
