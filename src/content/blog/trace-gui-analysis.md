@@ -205,7 +205,7 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
 
 <pre><code>{
     "addr": "0x7FF6A1B2C300",
-    "name": "sub_7FF6A1B2C300",
+    "name": "process_entry",
     "module": ""
 }</code></pre>
 
@@ -217,7 +217,7 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
 
 <pre><code>{
     "addr": "0x1A3F0",
-    "name": "sub_1A3F0",
+    "name": "Q3D_AnalyzeMesh",
     "module": "Q3D.dll"
 }</code></pre>
 
@@ -237,7 +237,7 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
     "all_functions": [
         {
             "addr": "0x7FF6A1B2C300",
-            "name": "sub_7FF6A1B2C300",
+            "name": "process_entry",
             "module": ""
         },
         {
@@ -281,7 +281,7 @@ td{color:#e1e4ed!important;background:var(--code-bg)!important}
 <div class="tip-box">
 <div class="tip-label">实际用法</div>
 当 AI 分析一个函数时，把 trace 输出作为上下文喂给 AI：<br><br>
-<code>"以下是该程序运行时的实际函数调用链：[trace内容]。基于这个调用链，分析 sub_xxxxx 的功能。"</code><br><br>
+<code>"以下是该程序运行时的实际函数调用链：[trace内容]。基于这个调用链，分析 Q3D.dll+0x1A3F0 对应目标函数的功能。"</code><br><br>
 AI 可以据此知道：<br>
 1. 这个函数是在哪个函数里被调用的<br>
 2. 调用顺序是什么<br>
@@ -341,17 +341,17 @@ AI 可以据此知道：<br>
 
 <h3 id="sec-caller">6.5 调用者函数名解析</h3>
 
-<p>工具记录调用链时，<code>caller</code> 字段使用 <strong>IDA 函数名</strong>而非原始返回地址。实现方式：</p>
+<p>工具记录调用链时，<code>caller</code> 字段优先使用函数列表 <code>name</code> 字段提供的稳定标识，而非只保留原始返回地址。实现方式：</p>
 
 <ul>
 <li>将 IDA MCP 导出的完整函数列表（含地址范围）构建为地址→名称查找表</li>
 <li>按模块和地址排序后嵌入 Frida JS 脚本中</li>
 <li>捕获到返回地址时，在查找表中二分搜索所属函数</li>
-<li>优先返回 IDA 命名的函数名（如 <code>sub_1A3F0</code>），而非裸地址或 DebugSymbol 名</li>
+<li>返回 JSON <code>name</code> 字段中的用户定义名称（如 <code>Q3D_AnalyzeMesh</code>）；缺少符号时，建议在生成 JSON 时使用 <code>模块名+RVA</code> 作为稳定标识</li>
 <li>若 IDA 表中未命中（如系统 DLL），降级使用 Frida 的 <code>DebugSymbol.fromAddress</code></li>
 </ul>
 
-<p>这使得调用链输出中的 <code>caller</code> 字段始终是可读的函数名，而非无语义的十六进制地址。</p>
+<p>这使得调用链输出中的 <code>caller</code> 字段具有稳定、可回溯的标识：有符号时显示语义名称，无符号时也能通过模块和 RVA 精确定位。</p>
 
 <h3 id="sec-late">6.6 延迟 Hook 机制</h3>
 
@@ -384,20 +384,20 @@ AI 可以据此知道：<br>
 
 <p><strong>trace_key_时间戳.txt</strong> — 函数调用记录（按目标函数去重）：</p>
 
-<pre><code>Q3D.dll!sub_1A3F0
-Q3D.dll!sub_2B4C0
+<pre><code>Q3D.dll!Q3D_AnalyzeMesh
+Q3D.dll!mesh_stage_02
 kernel32.dll!HeapAlloc
-Q3D.dll!sub_3D5E0
-Q3D.dll!sub_4E6F0
+Q3D.dll!field_solver_step
+Q3D.dll!result_export
 ...</code></pre>
 
 <p>每行只记录被调用的函数名（<code>模块名!函数名</code>），按目标函数去重。同一函数即使被多个不同调用者调用，也只写入一次，避免 trace 文件膨胀。</p>
 
 <p><strong>trace_log_时间戳.txt</strong> — 完整运行日志（含调用链、Hook 进度、崩溃信息等）。每条调用记录包含序号、栈深度、调用者和目标函数：</p>
 
-<pre><code>[   1] [depth= 9] ? -> Q3D.dll!sub_1A3F0
-[   2] [depth=16] Q3D.dll!funcA -> Q3D.dll!sub_2B4C0
-[   3] [depth=10] Q3D.dll!sub_2B4C0 -> kernel32.dll!HeapAlloc
+<pre><code>[   1] [depth= 9] ? -> Q3D.dll!Q3D_AnalyzeMesh
+[   2] [depth=16] Q3D.dll!dispatch_analysis -> Q3D.dll!mesh_stage_02
+[   3] [depth=10] Q3D.dll!mesh_stage_02 -> kernel32.dll!HeapAlloc
 ...</code></pre>
 
 <p>GUI 的 Function Calls 面板则只显示 key 形式的去重列表，与 <code>trace_key</code> 文件内容一致。</p>
